@@ -4,7 +4,7 @@ PythonからWindowsの電力管理機能を使いやすくするパッケージ�
 
 次のようなコードが簡単に書けます。
 
-アクティブな電力スキームのディスプレイ設定列挙
+アクティブな電力スキームのディスプレイ設定列挙：
 
 ```python
 from powpowerman import PowerScheme
@@ -13,7 +13,7 @@ for setting in PowerScheme.active_scheme().subgroup_display.iter_settings():
     print(f"{setting.friendlyname} ({setting.setting_guid})")
 ```
 
-画面の明るさを50%に設定
+画面の明るさを50%に設定：
 
 ```python
 from powpowerman import PowerScheme

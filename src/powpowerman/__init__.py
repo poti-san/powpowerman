@@ -622,7 +622,7 @@ _ACCESS_SCHEME = 16
 _ACCESS_SUBGROUP = 17
 _ACCESS_INDIVIDUAL_SETTING = 18
 
-_powerprof = WinDLL("powrprof.dll", use_last_error=False)
+_powerprof = WinDLL("powrprof.dll")
 
 _PowerEnumerate = _powerprof.PowerEnumerate
 _PowerEnumerate.restype = c_uint32
