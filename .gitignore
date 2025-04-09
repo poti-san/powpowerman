@@ -1,5 +1,7 @@
 /.vscode/
 *.code-workspace
+*.txt
+*.lnk
 
 # Local History for Visual Studio Code
 .history/
