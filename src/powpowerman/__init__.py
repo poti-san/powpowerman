@@ -26,7 +26,7 @@ class PowerSettingValueType(IntEnum):
     STR = 1
     EXPAND_STR = 2
     BINARY = 3
-    UINT32 = 4
+    # UINT32 = 4
     UINT32_LE = 4
     UINT32_BE = 5
     LINK = 6
@@ -34,7 +34,7 @@ class PowerSettingValueType(IntEnum):
     RESOURCE_LIST = 8
     FULL_RESOURCE_DESCRIPTOR = 9
     RESOURCE_REQUIREMENTS_LIST = 10
-    UINT64 = 11
+    # UINT64 = 11
     UINT64_LE = 11
 
 
@@ -45,8 +45,7 @@ class PowerKnownSubGroupGuid:
     DISK = Guid.from_str_d("0012ee47-9041-4b5d-9b77-535fba8b1442")
     SYSTEM_BUTTON = Guid.from_str_d("4f971e89-eebd-4455-a8de-9e59040e7347")
     PROCESSOR_SETTINGS = Guid.from_str_d("54533251-82be-4824-96c1-47b60b740d00")
-    # NOTE: SDK上ではVIDEOですが、実態に合わせてDISPLAYとします。
-    DISPLAY = Guid.from_str_d("7516b95f-f776-4464-8c53-06167f40cc99")
+    DISPLAY = Guid.from_str_d("7516b95f-f776-4464-8c53-06167f40cc99")  # SDKではVIDEO
     BATTERY = Guid.from_str_d("e73a048d-bf27-4f12-9731-8b2076e8891f")
     SLEEP = Guid.from_str_d("238C9FA8-0AAD-41ED-83F4-97BE242C8F20")
     PCIEXPRESS_SETTINGS = Guid.from_str_d("501a4d13-42af-4429-9fd1-a8218c268e20")
@@ -557,44 +556,123 @@ class PowerScheme(PowerEntry):
 class PowerPossibleSetting:
     """電力設定の取り得る値。"""
 
-    _subgroup_guid: Guid | None
-    _setting_guid: Guid | None
+    __subgroup_guid: Guid | None
+    __setting_guid: Guid | None
 
-    __slots__ = ("_subgroup_guid", "_setting_guid")
+    __slots__ = ("__subgroup_guid", "__setting_guid")
 
     def __init__(self, subgroup_guid: Guid | None, setting_guid: Guid | None) -> None:
-        self._subgroup_guid = subgroup_guid
-        self._setting_guid = setting_guid
+        self.__subgroup_guid = subgroup_guid
+        self.__setting_guid = setting_guid
 
     @property
     def subgroup_guid(self) -> Guid:
-        return typecast(Guid, self._subgroup_guid)
+        return typecast(Guid, self.__subgroup_guid)
 
     @property
     def setting_guid(self) -> Guid:
-        return typecast(Guid, self._setting_guid)
+        return typecast(Guid, self.__setting_guid)
 
     @property
-    def _subgroup_guid_ref(self):
-        return byref(self._subgroup_guid) if self._subgroup_guid else None
+    def __subgroup_guid_ref(self):
+        return byref(self.__subgroup_guid) if self.__subgroup_guid else None
 
     @property
-    def _setting_guid_ref(self):
-        return byref(self._setting_guid) if self._setting_guid else None
+    def __setting_guid_ref(self):
+        return byref(self.__setting_guid) if self.__setting_guid else None
+
+    @property
+    def is_range_defined(self) -> bool:
+        ret = _PowerIsSettingRangeDefined(self.__subgroup_guid_ref, self.__setting_guid_ref)
+        return ret == 0
+
+    def is_index_valid(self, index: int) -> bool:
+        if self.is_range_defined:
+            t = c_uint32()
+            bufsize = c_uint32()
+            ret = _PowerReadPossibleValue(
+                None, self.__subgroup_guid_ref, self.__setting_guid_ref, byref(t), index, None, byref(bufsize)
+            )
+            if ret != 0:
+                return False
+            return t.value != 0
+        else:
+            return index == 0
+
+    def get_value_type(self, index: int) -> PowerSettingValueType | None:
+        t = c_uint32()
+        bufsize = c_uint32()
+        ret = _PowerReadPossibleValue(
+            None, self.__subgroup_guid_ref, self.__setting_guid_ref, byref(t), index, None, byref(bufsize)
+        )
+        if ret != 0:
+            return None
+        return PowerSettingValueType(t.value)
+
+    def get_value_size(self, index: int) -> PowerSettingValueType | None:
+        bufsize = c_uint32()
+        ret = _PowerReadPossibleValue(
+            None, self.__subgroup_guid_ref, self.__setting_guid_ref, None, index, None, byref(bufsize)
+        )
+        if ret != 0:
+            return None
+        return PowerSettingValueType(bufsize.value)
+
+    @property
+    def value_type0(self) -> PowerSettingValueType | None:
+        return self.get_value_type(0)
+
+    @property
+    def value_size0(self) -> int | None:
+        return self.get_value_size(0)
+
+    def get_value(self, index: int) -> PowerSettingValue | None:
+        bufsize = c_uint32()
+        ret = _PowerReadPossibleValue(
+            None, self.__subgroup_guid_ref, self.__setting_guid_ref, None, index, None, byref(bufsize)
+        )
+
+        if ret != 0:
+            return None
+        buf = (c_byte * bufsize.value)()
+        buftype = c_uint32()
+        ret = _PowerReadPossibleValue(
+            None,
+            self.__subgroup_guid_ref,
+            self.__setting_guid_ref,
+            byref(buftype),
+            c_uint32(index),
+            buf,
+            byref(bufsize),
+        )
+        if ret != 0:
+            return None
+        return PowerSettingValue(PowerSettingValueType(buftype.value), bytes(buf))
 
     def get_description(self, index: int) -> str | None:
         """指定番目の説明を取得します。"""
         bufsize = c_uint32()
         ret = _PowerReadPossibleDescription(
-            None, self._subgroup_guid_ref, self._setting_guid_ref, index, None, byref(bufsize)
+            None, self.__subgroup_guid_ref, self.__setting_guid_ref, index, None, byref(bufsize)
         )
         if ret != 0:
             return None
         buf = (c_byte * bufsize.value)()
         ret = _PowerReadPossibleDescription(
-            None, self._subgroup_guid_ref, self._setting_guid_ref, index, buf, byref(bufsize)
+            None, self.__subgroup_guid_ref, self.__setting_guid_ref, index, buf, byref(bufsize)
         )
         return bytes(memoryview(buf)[:-2]).decode("utf-16le")
+
+    def iter_value_indexes(self) -> Iterator[int]:
+        """有効なインデックスのイテレーターを返します。"""
+        if self.is_range_defined:
+            for i in range(0xFFFFFFFF):
+                if not self.is_index_valid(i):
+                    return
+                yield i
+            raise OverflowError
+        else:
+            yield 0
 
     @property
     def descriptions(self) -> Iterator[str]:
@@ -602,10 +680,10 @@ class PowerPossibleSetting:
 
         ERROR_FILE_NOT_FOUND = 2
 
-        for i in range(0xFFFFFFFF):
+        for i in self.iter_value_indexes():
             bufsize = c_uint32()
             ret = _PowerReadPossibleDescription(
-                None, self._subgroup_guid_ref, self._setting_guid_ref, i, None, byref(bufsize)
+                None, self.__subgroup_guid_ref, self.__setting_guid_ref, i, None, byref(bufsize)
             )
             if ret != 0:
                 if ret == ERROR_FILE_NOT_FOUND:
@@ -613,7 +691,7 @@ class PowerPossibleSetting:
                 raise WinError(ret)
             buf = (c_byte * bufsize.value)()
             ret = _PowerReadPossibleDescription(
-                None, self._subgroup_guid_ref, self._setting_guid_ref, i, buf, byref(bufsize)
+                None, self.__subgroup_guid_ref, self.__setting_guid_ref, i, buf, byref(bufsize)
             )
             yield bytes(memoryview(buf)[:-2]).decode("utf-16le")
 
@@ -658,6 +736,22 @@ _PowerReadIconResourceSpecifier.argtypes = (
     POINTER(Guid),
     POINTER(Guid),
     POINTER(c_byte),
+    POINTER(c_uint32),
+)
+
+_PowerIsSettingRangeDefined = _powerprof.PowerIsSettingRangeDefined
+_PowerIsSettingRangeDefined.restype = c_uint32
+_PowerIsSettingRangeDefined.argtypes = (POINTER(Guid), POINTER(Guid))
+
+_PowerReadPossibleValue = _powerprof.PowerReadPossibleValue
+_PowerReadPossibleValue.restype = c_int32
+_PowerReadPossibleValue.argtypes = (
+    c_void_p,
+    POINTER(Guid),
+    POINTER(Guid),
+    POINTER(c_uint32),
+    c_uint32,
+    c_void_p,
     POINTER(c_uint32),
 )
 
