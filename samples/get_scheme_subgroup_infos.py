@@ -1,3 +1,5 @@
+# 全ての電源サブグループの情報を取得する。
+
 from powpowerman import PowerScheme
 
 for scheme in PowerScheme.enumerate():

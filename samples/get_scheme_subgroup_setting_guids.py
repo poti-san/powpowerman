@@ -1,3 +1,5 @@
+# 全ての電源設定のGUIDとAC値型を取得する。
+
 from powpowerman import PowerScheme
 
 scheme = PowerScheme.active_scheme()

@@ -7,16 +7,17 @@ from ctypes import (
     c_int32,
     c_uint32,
     c_void_p,
+    c_wchar_p,
     sizeof,
 )
 from dataclasses import dataclass
 from enum import IntEnum
 from os.path import expandvars
 from types import NotImplementedType
-from typing import Iterator
+from typing import Final, Iterator
 from typing import cast as typecast
 
-from .guid import Guid
+from powguid import Guid
 
 
 class PowerSettingValueType(IntEnum):
@@ -36,6 +37,21 @@ class PowerSettingValueType(IntEnum):
     RESOURCE_REQUIREMENTS_LIST = 10
     # UINT64 = 11
     UINT64_LE = 11
+
+
+class PowerPlatformRole(IntEnum):
+    """POWER_PLATFORM_ROLE"""
+
+    Unspecified = 0
+    Desktop = 1
+    Mobile = 2
+    Workstation = 3
+    EnterpriseServer = 4
+    SOHOServer = 5
+    AppliancePC = 6
+    PerformanceServer = 7
+    Slate = 8
+    Maximum = 9
 
 
 class PowerKnownSubGroupGuid:
@@ -147,7 +163,7 @@ class PowerEntry:
         ret = _PowerReadFriendlyName(
             None, self.scheme_guid_ref, self.subgroup_guid_ref, self.setting_guid_ref, None, byref(bufsize)
         )
-        """電力スキーム、サブグループまたは設定のフレンドリー名を取得します。エラー時はNoneを返します。"""
+        """電力スキーム、サブグループまたは設定のフレンドリー名を取得します。エラー時は`None`を返します。"""
 
         if ret != 0:
             return None
@@ -163,7 +179,7 @@ class PowerEntry:
         ret = _PowerReadDescription(
             None, self.scheme_guid_ref, self.subgroup_guid_ref, self.setting_guid_ref, None, byref(bufsize)
         )
-        """電力スキーム、サブグループまたは設定の説明を取得します。エラー時はNoneを返します。"""
+        """電力スキーム、サブグループまたは設定の説明を取得します。エラー時は`None`を返します。"""
 
         if ret != 0:
             return None
@@ -179,7 +195,7 @@ class PowerEntry:
         ret = _PowerReadIconResourceSpecifier(
             None, self.scheme_guid_ref, self.subgroup_guid_ref, self.setting_guid_ref, None, byref(bufsize)
         )
-        """電力スキーム、サブグループまたは設定のアイコンリソースを取得します。エラー時はNoneを返します。"""
+        """電力スキーム、サブグループまたは設定のアイコンリソースを取得します。エラー時は`None`を返します。"""
 
         if ret != 0:
             return None
@@ -195,12 +211,17 @@ class PowerSetting(PowerEntry):
 
     __slots__ = ()
 
-    def __init__(self, scheme_guid: Guid, subgroup_guid: Guid, setting_guid: Guid) -> None:
+    def __init__(self, scheme_guid: Guid | None, subgroup_guid: Guid, setting_guid: Guid) -> None:
         super().__init__(scheme_guid, subgroup_guid, setting_guid)
 
+    @staticmethod
+    def create(subgroup_guid: Guid, setting_guid: Guid) -> "PowerSetting | None":
+        ret = _PowerCreateSetting(subgroup_guid, setting_guid)
+        return PowerSetting(None, subgroup_guid, setting_guid) if ret == 0 else None
+
     @property
-    def scheme(self) -> "PowerScheme":
-        return PowerScheme(self.scheme_guid)
+    def scheme(self) -> "PowerScheme | None":
+        return PowerScheme(self.scheme_guid) if self.scheme_guid else None
 
     @property
     def subgroup(self) -> "PowerSubGroup":
@@ -229,7 +250,7 @@ class PowerSetting(PowerEntry):
         ret = _PowerReadDCValue(
             None, self.scheme_guid_ref, self.subgroup_guid_ref, self.setting_guid_ref, None, None, byref(bufsize)
         )
-        """直流電源時（バッテリー稼働時）の値を取得します。エラー時はNoneを返します。"""
+        """直流電源時（バッテリー稼働時）の値を取得します。エラー時は`None`を返します。"""
 
         if ret != 0:
             return None
@@ -254,7 +275,7 @@ class PowerSetting(PowerEntry):
         ret = _PowerReadACValue(
             None, self.scheme_guid_ref, self.subgroup_guid_ref, self.setting_guid_ref, None, None, byref(bufsize)
         )
-        """交流電源時（コンセント接続時）の値を取得します。エラー時はNoneを返します。"""
+        """交流電源時（コンセント接続時）の値を取得します。エラー時は`None`を返します。"""
 
         if ret != 0:
             return None
@@ -275,7 +296,7 @@ class PowerSetting(PowerEntry):
 
     @property
     def dc_value_type(self) -> PowerSettingValueType | int | None:
-        """直流電源時（バッテリー稼働時）の値の型を取得します。エラー時はNoneを返します。"""
+        """直流電源時（バッテリー稼働時）の値の型を取得します。エラー時は`None`を返します。"""
         bufsize = c_uint32()
         valuetype = c_uint32()
         ret = _PowerReadDCValue(
@@ -291,7 +312,7 @@ class PowerSetting(PowerEntry):
 
     @property
     def dc_value_size(self) -> PowerSettingValueType | int | None:
-        """直流電源時（バッテリー稼働時）の値のバイト数を取得します。エラー時はNoneを返します。"""
+        """直流電源時（バッテリー稼働時）の値のバイト数を取得します。エラー時は`None`を返します。"""
         bufsize = c_uint32()
         ret = _PowerReadDCValue(
             None,
@@ -306,7 +327,7 @@ class PowerSetting(PowerEntry):
 
     @property
     def ac_value_type(self) -> PowerSettingValueType | int | None:
-        """交流電源時（コンセント接続時）の値の型を取得します。エラー時はNoneを返します。"""
+        """交流電源時（コンセント接続時）の値の型を取得します。エラー時は`None`を返します。"""
         bufsize = c_uint32()
         valuetype = c_uint32()
         ret = _PowerReadACValue(
@@ -322,7 +343,7 @@ class PowerSetting(PowerEntry):
 
     @property
     def ac_value_size(self) -> PowerSettingValueType | int | None:
-        """交流電源時（コンセント接続時）の値のバイト数を取得します。エラー時はNoneを返します。"""
+        """交流電源時（コンセント接続時）の値のバイト数を取得します。エラー時は`None`を返します。"""
         bufsize = c_uint32()
         ret = _PowerReadACValue(
             None,
@@ -337,7 +358,7 @@ class PowerSetting(PowerEntry):
 
     @property
     def dc_value_index(self) -> int | None:
-        """直流電源時（バッテリー稼働時）の値インデックスを取得または設定します。エラー時はNoneを返します。
+        """直流電源時（バッテリー稼働時）の値インデックスを取得または設定します。エラー時は`None`を返します。
 
         設定される値はvalue_typeやPowerPossibleSettingを確認してください。"""
         x = c_uint32()
@@ -348,7 +369,7 @@ class PowerSetting(PowerEntry):
 
     @property
     def ac_value_index(self) -> int | None:
-        """交流電源時（コンセント接続時）の値インデックスを取得または設定します。エラー時はNoneを返します。
+        """交流電源時（コンセント接続時）の値インデックスを取得または設定します。エラー時は`None`を返します。
 
         設定される値はvalue_typeやPowerPossibleSettingを確認してください。"""
         x = c_uint32()
@@ -552,6 +573,26 @@ class PowerScheme(PowerEntry):
         """PCI EXPRESSを表す電力サブグループを返します。"""
         return PowerSubGroup(self.scheme_guid, PowerKnownSubGroupGuid.PCIEXPRESS_SETTINGS)
 
+    @property
+    def can_restore_individual_default(self) -> bool:
+        return _PowerCanRestoreIndividualDefaultPowerScheme(self.scheme_guid_ref) == 0
+
+    @staticmethod
+    def delete_scheme(scheme_guid: Guid) -> bool:
+        return _PowerDeleteScheme(None, scheme_guid) == 0
+
+    # TODO: TEST
+    @staticmethod
+    def duplicate_scheme(scheme_guid: Guid, new_scheme_guid: Guid | None = None) -> Guid | None:
+        guid = POINTER(Guid)(new_scheme_guid) if new_scheme_guid else POINTER(Guid)()
+        return guid.contents if _PowerDuplicateScheme(None, scheme_guid, byref(guid)) == 0 else None
+
+    # TODO: TEST
+    @staticmethod
+    def import_scheme(import_filename: str, new_scheme_guid: Guid | None = None) -> Guid | None:
+        guid = POINTER(Guid)(new_scheme_guid) if new_scheme_guid else POINTER(Guid)()
+        return guid.contents if _PowerImportPowerScheme(import_filename, byref(guid)) == 0 else None
+
 
 class PowerPossibleSetting:
     """電力設定の取り得る値。"""
@@ -567,10 +608,12 @@ class PowerPossibleSetting:
 
     @property
     def subgroup_guid(self) -> Guid:
+        """電源サブグループのGUIDを取得します。"""
         return typecast(Guid, self.__subgroup_guid)
 
     @property
     def setting_guid(self) -> Guid:
+        """電源設定のGUIDを取得します。"""
         return typecast(Guid, self.__setting_guid)
 
     @property
@@ -583,10 +626,13 @@ class PowerPossibleSetting:
 
     @property
     def is_range_defined(self) -> bool:
+        """電源設定が範囲として定義されていれば真を返します。"""
         ret = _PowerIsSettingRangeDefined(self.__subgroup_guid_ref, self.__setting_guid_ref)
         return ret == 0
 
     def is_index_valid(self, index: int) -> bool:
+        """インデックスが有効な範囲内であれば真を返します。
+        電源設定が範囲ではない場合、0の場合のみ真です。"""
         if self.is_range_defined:
             t = c_uint32()
             bufsize = c_uint32()
@@ -600,6 +646,7 @@ class PowerPossibleSetting:
             return index == 0
 
     def get_value_type(self, index: int) -> PowerSettingValueType | None:
+        """指定したインデックスの値の型を取得します。エラー時は`None`です。"""
         t = c_uint32()
         bufsize = c_uint32()
         ret = _PowerReadPossibleValue(
@@ -610,6 +657,7 @@ class PowerPossibleSetting:
         return PowerSettingValueType(t.value)
 
     def get_value_size(self, index: int) -> PowerSettingValueType | None:
+        """指定したインデックスの値のバイト数を取得します。エラー時は`None`です。"""
         bufsize = c_uint32()
         ret = _PowerReadPossibleValue(
             None, self.__subgroup_guid_ref, self.__setting_guid_ref, None, index, None, byref(bufsize)
@@ -620,13 +668,16 @@ class PowerPossibleSetting:
 
     @property
     def value_type0(self) -> PowerSettingValueType | None:
+        """0番目の値の型を取得します。エラー時は`None`です。"""
         return self.get_value_type(0)
 
     @property
     def value_size0(self) -> int | None:
+        """0番目の値のバイト数を取得します。エラー時は`None`です。"""
         return self.get_value_size(0)
 
     def get_value(self, index: int) -> PowerSettingValue | None:
+        """指定したインデックスの値を取得します。エラー時は`None`です。"""
         bufsize = c_uint32()
         ret = _PowerReadPossibleValue(
             None, self.__subgroup_guid_ref, self.__setting_guid_ref, None, index, None, byref(bufsize)
@@ -650,7 +701,7 @@ class PowerPossibleSetting:
         return PowerSettingValue(PowerSettingValueType(buftype.value), bytes(buf))
 
     def get_description(self, index: int) -> str | None:
-        """指定番目の説明を取得します。"""
+        """指定したインデックスの値の説明を取得します。エラー時は`None`です。"""
         bufsize = c_uint32()
         ret = _PowerReadPossibleDescription(
             None, self.__subgroup_guid_ref, self.__setting_guid_ref, index, None, byref(bufsize)
@@ -663,8 +714,22 @@ class PowerPossibleSetting:
         )
         return bytes(memoryview(buf)[:-2]).decode("utf-16le")
 
+    def get_friendly_name(self, index: int) -> str | None:
+        """指定したインデックスの値のフレンドリー名を取得します。エラー時は`None`です。"""
+        bufsize = c_uint32()
+        ret = _PowerReadPossibleFriendlyName(
+            None, self.__subgroup_guid_ref, self.__setting_guid_ref, index, None, byref(bufsize)
+        )
+        if ret != 0:
+            return None
+        buf = (c_byte * bufsize.value)()
+        ret = _PowerReadPossibleFriendlyName(
+            None, self.__subgroup_guid_ref, self.__setting_guid_ref, index, buf, byref(bufsize)
+        )
+        return bytes(memoryview(buf)[:-2]).decode("utf-16le")
+
     def iter_value_indexes(self) -> Iterator[int]:
-        """有効なインデックスのイテレーターを返します。"""
+        """有効なインデックスのイテレーターを返します。範囲以外の場合は常に0です。"""
         if self.is_range_defined:
             for i in range(0xFFFFFFFF):
                 if not self.is_index_valid(i):
@@ -675,25 +740,49 @@ class PowerPossibleSetting:
             yield 0
 
     @property
-    def descriptions(self) -> Iterator[str]:
-        """説明を順番に返すイテレーターを取得します。"""
-
-        ERROR_FILE_NOT_FOUND = 2
+    def values(self) -> Iterator[PowerSettingValue]:
+        """値の取り得る値を順番に返すイテレーターを取得します。"""
 
         for i in self.iter_value_indexes():
-            bufsize = c_uint32()
-            ret = _PowerReadPossibleDescription(
-                None, self.__subgroup_guid_ref, self.__setting_guid_ref, i, None, byref(bufsize)
-            )
-            if ret != 0:
-                if ret == ERROR_FILE_NOT_FOUND:
-                    break
-                raise WinError(ret)
-            buf = (c_byte * bufsize.value)()
-            ret = _PowerReadPossibleDescription(
-                None, self.__subgroup_guid_ref, self.__setting_guid_ref, i, buf, byref(bufsize)
-            )
-            yield bytes(memoryview(buf)[:-2]).decode("utf-16le")
+            x = self.get_value(i)
+            if x is None:
+                raise ValueError
+            yield x
+
+    @property
+    def descriptions(self) -> Iterator[str]:
+        """値の説明を順番に返すイテレーターを取得します。"""
+
+        for i in self.iter_value_indexes():
+            x = self.get_description(i)
+            if x is None:
+                raise ValueError
+            yield x
+
+    @property
+    def friendly_name(self) -> Iterator[str]:
+        """値のフレンドリー名を順番に返すイテレーターを取得します。"""
+
+        for i in self.iter_value_indexes():
+            x = self.get_friendly_name(i)
+            if x is None:
+                raise ValueError
+            yield x
+
+    @staticmethod
+    def create(subgroup_guid: Guid, setting_guid: Guid, max_index: int) -> "PowerPossibleSetting | None":
+        ret = _PowerCreatePossibleSetting(None, subgroup_guid, setting_guid, max_index)
+        return PowerPossibleSetting(subgroup_guid, setting_guid) if ret == 0 else None
+
+
+class PowerPlatform:
+    __slots__ = ()
+
+    PLATFORM_ROLE_VERSION: Final = 0x00000002
+
+    @staticmethod
+    def get_platform_role_ex() -> PowerPlatformRole:
+        return PowerPlatformRole(_PowerDeterminePlatformRoleEx(PowerPlatform.PLATFORM_ROLE_VERSION))
 
 
 _ACCESS_SCHEME = 16
@@ -766,6 +855,17 @@ _PowerReadPossibleDescription.argtypes = (
     POINTER(c_uint32),
 )
 
+_PowerReadPossibleFriendlyName = _powerprof.PowerReadPossibleFriendlyName
+_PowerReadPossibleFriendlyName.restype = c_uint32
+_PowerReadPossibleFriendlyName.argtypes = (
+    c_void_p,
+    POINTER(Guid),
+    POINTER(Guid),
+    c_uint32,
+    POINTER(c_byte),
+    POINTER(c_uint32),
+)
+
 _PowerGetActiveScheme = _powerprof.PowerGetActiveScheme
 _PowerGetActiveScheme.restype = c_uint32
 _PowerGetActiveScheme.argtypes = (c_void_p, POINTER(POINTER(Guid)))
@@ -813,6 +913,34 @@ _PowerWriteACValueIndex.argtypes = (c_void_p, POINTER(Guid), POINTER(Guid), POIN
 _PowerSetActiveScheme = _powerprof.PowerSetActiveScheme
 _PowerSetActiveScheme.restype = c_int32
 _PowerSetActiveScheme.argtypes = (c_void_p, POINTER(Guid))
+
+_PowerCanRestoreIndividualDefaultPowerScheme = _powerprof.PowerCanRestoreIndividualDefaultPowerScheme
+_PowerCanRestoreIndividualDefaultPowerScheme.restype = c_uint32
+_PowerCanRestoreIndividualDefaultPowerScheme.argtypes = (POINTER(Guid),)
+
+_PowerCreatePossibleSetting = _powerprof.PowerCreatePossibleSetting
+_PowerCreatePossibleSetting.restype = c_uint32
+_PowerCreatePossibleSetting.argtypes = (c_void_p, POINTER(Guid), POINTER(Guid), c_uint32)
+
+_PowerCreateSetting = _powerprof.PowerCreateSetting
+_PowerCreateSetting.restype = c_uint32
+_PowerCreateSetting.argtypes = (c_void_p, POINTER(Guid), POINTER(Guid))
+
+_PowerDeleteScheme = _powerprof.PowerDeleteScheme
+_PowerDeleteScheme.restype = c_uint32
+_PowerDeleteScheme.argtypes = (c_void_p, POINTER(Guid))
+
+_PowerDeterminePlatformRoleEx = _powerprof.PowerDeterminePlatformRoleEx
+_PowerDeterminePlatformRoleEx.restype = c_int32
+_PowerDeterminePlatformRoleEx.argtypes = (c_int32,)
+
+_PowerDuplicateScheme = _powerprof.PowerDuplicateScheme
+_PowerDuplicateScheme.restype = c_uint32
+_PowerDuplicateScheme.argtypes = (c_void_p, POINTER(Guid), POINTER(POINTER(Guid)))
+
+_PowerImportPowerScheme = _powerprof.PowerImportPowerScheme
+_PowerImportPowerScheme.restype = c_uint32
+_PowerImportPowerScheme.argtypes = (c_void_p, c_wchar_p, POINTER(POINTER(Guid)))
 
 _kernel32 = WinDLL("kernel32.dll")
 _LocalFree = _kernel32.LocalFree
