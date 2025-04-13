@@ -1,5 +1,14 @@
 # powpowermanパッケージ
 
+```{toctree}
+---
+hidden:
+---
+apiref/powpowerman
+genindex
+modindex
+```
+
 PythonからWindowsの電力管理機能を使いやすくするパッケージです。標準ライブラリとpowguidパッケージに依存します。
 
 次のようなコードが簡単に書けます。
@@ -28,11 +37,4 @@ display_brightness.ac_value_index = 50
 # display_brightness.ac_value_index = 100
 
 display_brightness.apply_changes()
-```
-
-```{toctree}
----
-maxdepth: 3
----
-apiref/powpowerman
 ```

@@ -3,12 +3,16 @@
 # For the full list of built-in configuration values, see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
+import os
+import sys
+sys.path.insert(0, os.path.abspath("../../src"))
+
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = "powpowerman"
-copyright = "2025, potisan"
-author = "potisan"
+copyright = "2025, poti-san"
+author = "poti-san"
 version = "0.0.1"
 
 # -- General configuration ---------------------------------------------------
@@ -20,6 +24,8 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
     "sphinx.ext.napoleon",
+    "sphinx.ext.githubpages",
+    "sphinx_rtd_theme",
     "myst_parser",
 ]
 
@@ -27,6 +33,8 @@ templates_path = ["_templates"]
 exclude_patterns = []
 
 language = "ja"
+
+napoleon_google_docstring = True
 
 source_suffix = {
     ".rst": "restructuredtext",
