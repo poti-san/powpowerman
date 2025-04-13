@@ -1,0 +1,151 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="ja" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>powpowermanパッケージ &mdash; powpowerman  ドキュメント</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=c033477b"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/translations.js?v=4755f45a"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="索引" href="genindex.html" />
+    <link rel="search" title="検索" href="search.html" />
+    <link rel="next" title="powpowerman package" href="apiref/powpowerman.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="#" class="icon icon-home">
+            powpowerman
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="apiref/powpowerman.html">powpowerman package</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">powpowerman</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="#" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">powpowermanパッケージ</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/index.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="powpowerman">
+<h1>powpowermanパッケージ<a class="headerlink" href="#powpowerman" title="Link to this heading"></a></h1>
+<p>PythonからWindowsの電力管理機能を使いやすくするパッケージです。標準ライブラリとpowguidパッケージに依存します。</p>
+<p>次のようなコードが簡単に書けます。</p>
+<p><strong>アクティブな電力スキームのディスプレイ設定列挙</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">powpowerman</span><span class="w"> </span><span class="kn">import</span> <span class="n">PowerScheme</span>
+
+<span class="k">for</span> <span class="n">setting</span> <span class="ow">in</span> <span class="n">PowerScheme</span><span class="o">.</span><span class="n">active_scheme</span><span class="p">()</span><span class="o">.</span><span class="n">subgroup_display</span><span class="o">.</span><span class="n">iter_settings</span><span class="p">():</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">setting</span><span class="o">.</span><span class="n">friendlyname</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">setting</span><span class="o">.</span><span class="n">setting_guid</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>画面の明るさを50%に設定</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">powguid</span><span class="w"> </span><span class="kn">import</span> <span class="n">Guid</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">powpowerman</span><span class="w"> </span><span class="kn">import</span> <span class="n">PowerScheme</span>
+
+<span class="n">GUID_DISPLAY_BRIGHTNESS_LEVEL</span> <span class="o">=</span> <span class="n">Guid</span><span class="o">.</span><span class="n">from_str</span><span class="p">(</span><span class="s2">&quot;{aded5e82-b909-4619-9949-f5d71dac0bcb}&quot;</span><span class="p">)</span>
+
+<span class="n">display_subgroup</span> <span class="o">=</span> <span class="n">PowerScheme</span><span class="o">.</span><span class="n">active_scheme</span><span class="p">()</span><span class="o">.</span><span class="n">subgroup_display</span>
+<span class="n">display_brightness</span> <span class="o">=</span> <span class="n">display_subgroup</span><span class="o">.</span><span class="n">settings</span><span class="p">(</span><span class="n">GUID_DISPLAY_BRIGHTNESS_LEVEL</span><span class="p">)</span>
+<span class="n">display_brightness</span><span class="o">.</span><span class="n">ac_value_index</span> <span class="o">=</span> <span class="mi">50</span>
+<span class="c1"># display_brightness.ac_value_index = 100</span>
+
+<span class="n">display_brightness</span><span class="o">.</span><span class="n">apply_changes</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="apiref/powpowerman.html">powpowerman package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="apiref/powpowerman.html#module-powpowerman">Module contents</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="apiref/powpowerman.html#powpowerman.PowerEntry"><code class="docutils literal notranslate"><span class="pre">PowerEntry</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="apiref/powpowerman.html#powpowerman.PowerKnownSubGroupGuid"><code class="docutils literal notranslate"><span class="pre">PowerKnownSubGroupGuid</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="apiref/powpowerman.html#powpowerman.PowerPlatform"><code class="docutils literal notranslate"><span class="pre">PowerPlatform</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="apiref/powpowerman.html#powpowerman.PowerPlatformRole"><code class="docutils literal notranslate"><span class="pre">PowerPlatformRole</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="apiref/powpowerman.html#powpowerman.PowerPossibleSetting"><code class="docutils literal notranslate"><span class="pre">PowerPossibleSetting</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="apiref/powpowerman.html#powpowerman.PowerScheme"><code class="docutils literal notranslate"><span class="pre">PowerScheme</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="apiref/powpowerman.html#powpowerman.PowerSetting"><code class="docutils literal notranslate"><span class="pre">PowerSetting</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="apiref/powpowerman.html#powpowerman.PowerSettingValue"><code class="docutils literal notranslate"><span class="pre">PowerSettingValue</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="apiref/powpowerman.html#powpowerman.PowerSettingValueType"><code class="docutils literal notranslate"><span class="pre">PowerSettingValueType</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="apiref/powpowerman.html#powpowerman.PowerSubGroup"><code class="docutils literal notranslate"><span class="pre">PowerSubGroup</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="apiref/powpowerman.html" class="btn btn-neutral float-right" title="powpowerman package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, potisan.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
